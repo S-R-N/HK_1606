@@ -467,6 +467,10 @@ namespace SKYNST_CharaRecog
         //・引数    Bitmap img：文字認識処理対象の画像を指定する
         private void chara_recog_start(Bitmap img)
         {
+            if(tenji_export.Checked == true)
+            {
+                textBox_result.Font = new Font("MS 明朝", 8);
+            }
             //処理中であることをテキストボックスに表示する
             textBox_result.Text = "解析中...";
             this.Refresh();
@@ -595,8 +599,13 @@ namespace SKYNST_CharaRecog
                     button_output.Enabled = true;//『保存』ボタンを不可にする
 
                     tenji_flag = -1;//点字フラグを戻す
+                    tenji_str = "";
+                    if(tenji_export.Checked == true)
+                    {
+                        tenji_export.Checked = false;
+                        tenji_CheckedChanged();
+                    }
                     tenji_export.Enabled = true;//『点字表記』チェックボックスを可にする
-                    tenji_export.Checked = false;//『点字表記』チェックボックスのチェックをなしにする
                     break;
                 case 2:
                     break;
@@ -611,7 +620,37 @@ namespace SKYNST_CharaRecog
 
         /*================ ↓点字処理のイベント↓ ================*/
         private void tenji_export_CheckedChanged(object sender, EventArgs e)
-        {           
+        {
+            tenji_CheckedChanged();
+        }
+
+
+        // ●トリミング処理ウィンドウを開くメソッド
+        private void trimming_start()
+        {
+            Form3 f = new Form3();  // トリミングウィンドウを開く
+            f.ShowDialog();
+        }
+
+        private void readout()
+        {
+            if (System.Diagnostics.Process.GetProcessesByName("BouyomiChan").Length <= 0)//棒読みちゃん起動していなければ起動
+            {
+                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
+                psi.FileName = @"..\..\..\packages\BouyomiChan_0_1_11_0_Beta16\BouyomiChan.exe";
+                psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                System.Diagnostics.Process p = System.Diagnostics.Process.Start(psi);
+                System.Threading.Thread.Sleep(5000);
+            }
+            System.Diagnostics.ProcessStartInfo qsi = new System.Diagnostics.ProcessStartInfo();
+            qsi.FileName = @"..\..\..\packages\BouyomiChan_0_1_11_0_Beta16\RemoteTalk\RemoteTalk.exe";
+            qsi.Arguments = String.Format("/T {0}", normal_str);
+            qsi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            System.Diagnostics.Process q = System.Diagnostics.Process.Start(qsi);
+        }
+
+        private void tenji_CheckedChanged()
+        {
             if (tenji_flag == -1)
             {
                 //リソース(BWLbrail)をバイト配列に読み込む
@@ -630,11 +669,11 @@ namespace SKYNST_CharaRecog
                 //textBox_resultコントロールのフォントに設定する
                 textBox_result.Font = f;
 
-                int i=0;
-                int check=0;
+                int i = 0;
+                int check = 0;
                 int lengthcheck = normal_str.Length;
                 char[] temp_c = normal_str.ToCharArray();
-                for (i=0; i < lengthcheck; i++)
+                for (i = 0; i < lengthcheck; i++)
                 {
                     //きゃきゅきょ
                     if (temp_c[i] == 'き' && temp_c[i + 1] == 'ゃ' || temp_c[i] == 'キ' && temp_c[i + 1] == 'ャ')
@@ -972,7 +1011,7 @@ namespace SKYNST_CharaRecog
                         temp_c[i] = '？';
                         temp_c[i + 1] = 'い';
                         lengthcheck++;
-                    }                    
+                    }
                     else if (temp_c[i] == 'う' && temp_c[i + 1] == 'ぇ' || temp_c[i] == 'ウ' && temp_c[i + 1] == 'ェ')
                     {
                         Array.Resize(ref temp_c, lengthcheck + 1);
@@ -1381,60 +1420,34 @@ namespace SKYNST_CharaRecog
                         temp_c[i + 1] = 'は';
                         lengthcheck++;
                     }
-                    check=i;
+                    check = i;
                 }
-                for (i = 0; i <check; i++)
+                for (i = 0; i < check; i++)
                 {
                     tenji_str += string.Join("", temp_c[i]);
                 }
-                textBox_result.Text=tenji_str;
+                textBox_result.Text = tenji_str;
                 tenji_flag = 1;
 
                 button_output.Enabled = false;
             }
-            else if(tenji_flag==0){
+            else if (tenji_flag == 0)
+            {
                 textBox_result.Font = new System.Drawing.Font(pfc.Families[0], 12);
                 textBox_result.Text = tenji_str;
                 tenji_flag = 1;
 
                 button_output.Enabled = false;
             }
-            else if(tenji_flag==1)
+            else if (tenji_flag == 1)
             {
                 textBox_result.Font = new Font("MS 明朝", 8);
                 textBox_result.Text = normal_str;
                 tenji_flag = 0;
 
                 button_output.Enabled = true;
-            }
+            }            
         }
-
-
-        // ●トリミング処理ウィンドウを開くメソッド
-        private void trimming_start()
-        {
-            Form3 f = new Form3();  // トリミングウィンドウを開く
-            f.ShowDialog();
-        }
-
-        private void readout()
-        {
-            if (System.Diagnostics.Process.GetProcessesByName("BouyomiChan").Length <= 0)//棒読みちゃん起動していなければ起動
-            {
-                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
-                psi.FileName = @"..\..\..\packages\BouyomiChan_0_1_11_0_Beta16\BouyomiChan.exe";
-                psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
-                System.Diagnostics.Process p = System.Diagnostics.Process.Start(psi);
-                System.Threading.Thread.Sleep(5000);
-            }
-            System.Diagnostics.ProcessStartInfo qsi = new System.Diagnostics.ProcessStartInfo();
-            qsi.FileName = @"..\..\..\packages\BouyomiChan_0_1_11_0_Beta16\RemoteTalk\RemoteTalk.exe";
-            qsi.Arguments = String.Format("/T {0}", normal_str);
-            qsi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-            System.Diagnostics.Process q = System.Diagnostics.Process.Start(qsi);
-        }
-
-
 
 
 
